@@ -2,6 +2,7 @@ import { useState } from "react";
 import { products } from "../data/products";
 import ProductCard from "../components/ProductCard";
 import Sidebar from "../components/Sidebar";
+import Modal from "../components/Modal";
 import "./Home.css";
 
 function TvListing({ cart, setCart }) {
@@ -12,6 +13,7 @@ function TvListing({ cart, setCart }) {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("5000");
   const [sortType, setSortType] = useState("low-to-high");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [appliedFilters, setAppliedFilters] = useState({
     brand: "",
@@ -68,15 +70,25 @@ function TvListing({ cart, setCart }) {
           <div className="toolbar">
             <p>{sortedProducts.length} товаров</p>
 
-            <div>
-              <label>Сортировка: </label>
-              <select
-                value={sortType}
-                onChange={(event) => setSortType(event.target.value)}
+            <div className="toolbar-right">
+              <button
+                className="open-modal-button"
+                onClick={() => setIsModalOpen(true)}
+                type="button"
               >
-                <option value="low-to-high">Цена: по возрастанию</option>
-                <option value="high-to-low">Цена: по убыванию</option>
-              </select>
+                Открыть модальное окно
+              </button>
+
+              <div>
+                <label>Сортировка: </label>
+                <select
+                  value={sortType}
+                  onChange={(event) => setSortType(event.target.value)}
+                >
+                  <option value="low-to-high">Цена: по возрастанию</option>
+                  <option value="high-to-low">Цена: по убыванию</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -92,6 +104,15 @@ function TvListing({ cart, setCart }) {
           </div>
         </main>
       </div>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Информация"
+      >
+        <p>Это учебное модальное окно, открытое через React Portal.</p>
+        <p>Оно закрывается по кнопке и по клавише Esc.</p>
+      </Modal>
     </div>
   );
 }
