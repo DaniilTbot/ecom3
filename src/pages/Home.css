@@ -428,3 +428,41 @@
     max-width: 280px;
   }
 }
+.timer-close-button {
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.16);
+  color: white;
+  cursor: pointer;
+}
+
+.timer-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.timer-controls button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.timer-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.timer-restart-active {
+  background: #ffffff;
+  color: #111;
+  font-weight: 700;
+}

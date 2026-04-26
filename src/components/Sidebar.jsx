@@ -1,3 +1,5 @@
+import DealTimer from "./DealTimer";
+
 function Sidebar({
   brands,
   selectedBrand,
@@ -45,12 +47,11 @@ function Sidebar({
         </div>
       </div>
 
-      <button onClick={onApplyFilters}>Применить фильтры</button>
+      <button onClick={onApplyFilters} type="button">
+        Применить фильтры
+      </button>
 
-      <div className="special-deal">
-        <h3>Специальное предложение</h3>
-        <p>0:59:59</p>
-      </div>
+      <DealTimer />
     </aside>
   );
 }
