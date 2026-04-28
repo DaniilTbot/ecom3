@@ -3,6 +3,7 @@ import { products } from "../data/products";
 import ProductCard from "../components/ProductCard";
 import Sidebar from "../components/Sidebar";
 import Modal from "../components/Modal";
+import WeatherWidget from "../components/WeatherWidget";
 import "./Home.css";
 
 function TvListing({ cart, setCart }) {
@@ -91,6 +92,8 @@ function TvListing({ cart, setCart }) {
               </div>
             </div>
           </div>
+
+          <WeatherWidget />
 
           <div className="products">
             {sortedProducts.map((product) => (

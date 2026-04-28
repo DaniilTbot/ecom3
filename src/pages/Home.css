@@ -524,3 +524,93 @@
   flex-direction: column;
   gap: 12px;
 }
+.weather-widget {
+  position: relative;
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  background: white;
+}
+
+.weather-close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: #f3f3f3;
+  cursor: pointer;
+}
+
+.weather-title {
+  margin: 0 0 16px;
+}
+
+.weather-loading {
+  padding: 24px 0;
+  font-size: 18px;
+}
+
+.weather-info {
+  min-height: 90px;
+  margin-bottom: 16px;
+}
+
+.weather-city {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.weather-temp {
+  margin: 0 0 8px;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.weather-description {
+  margin: 0;
+  color: #666;
+}
+
+.weather-empty {
+  margin: 0;
+  color: #777;
+}
+
+.weather-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.weather-controls input {
+  flex: 1;
+  min-width: 220px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.weather-controls button {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #07071a;
+  color: white;
+  cursor: pointer;
+}
+
+.weather-controls button:disabled,
+.weather-controls input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.weather-error {
+  margin: 12px 0 0;
+  color: #c62828;
+}
