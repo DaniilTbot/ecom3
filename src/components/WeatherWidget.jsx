@@ -1,5 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fetchCityCoordinates, fetchWeatherByCoords } from "../api/weather";
+
+const DEFAULT_CITY = "Тюмень";
+
+function getUserPosition() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Геолокация недоступна"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      timeout: 8000,
+    });
+  });
+}
 
 function WeatherWidget() {
   const [isVisible, setIsVisible] = useState(true);
@@ -8,51 +23,188 @@ function WeatherWidget() {
   const [weatherData, setWeatherData] = useState(null);
   const [cityError, setCityError] = useState("");
   const [weatherError, setWeatherError] = useState("");
+  const [failedCities, setFailedCities] = useState([]);
+
+  const abortControllerRef = useRef(null);
+
+  function abortActiveRequest() {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+  }
+
+  function createController() {
+    abortActiveRequest();
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    return controller;
+  }
+
+  function isAbortError(error) {
+    return error?.name === "AbortError";
+  }
+
+  async function loadWeatherForCity(cityName, controller) {
+    const coordinates = await fetchCityCoordinates(cityName, controller.signal);
+
+    if (!coordinates) {
+      return null;
+    }
+
+    const weather = await fetchWeatherByCoords(
+      coordinates.lat,
+      coordinates.lon,
+      controller.signal
+    );
+
+    return {
+      weather,
+      cityName: coordinates.name,
+    };
+  }
 
   useEffect(() => {
-    async function loadDefaultWeather() {
+    let isMounted = true;
+
+    async function loadInitialWeather() {
       setIsLoading(true);
       setCityError("");
       setWeatherError("");
 
       try {
-        const coordinates = await fetchCityCoordinates("Тюмень");
+        const position = await getUserPosition();
 
-        if (!coordinates) {
-          setCityInput("");
-          setWeatherData(null);
-          setCityError("Не удалось получить данные для города Тюмень");
+        if (!isMounted) {
           return;
         }
 
-        try {
-          const weather = await fetchWeatherByCoords(
-            coordinates.lat,
-            coordinates.lon
-          );
+        const controller = createController();
 
-          setWeatherData(weather);
-          setCityInput(coordinates.name);
-        } catch (error) {
-          setWeatherData(null);
-          setCityInput(coordinates.name);
-          setWeatherError("Не удалось получить данные");
+        const weather = await fetchWeatherByCoords(
+          position.coords.latitude,
+          position.coords.longitude,
+          controller.signal
+        );
+
+        if (!isMounted || controller.signal.aborted) {
+          return;
         }
+
+        setWeatherData(weather);
+        setCityInput(weather.city);
       } catch (error) {
-        setCityInput("");
-        setWeatherData(null);
-        setCityError("Не удалось получить данные для города Тюмень");
+        if (isAbortError(error) || !isMounted) {
+          return;
+        }
+
+        const controller = createController();
+
+        try {
+          const result = await loadWeatherForCity(DEFAULT_CITY, controller);
+
+          if (!isMounted || controller.signal.aborted) {
+            return;
+          }
+
+          if (!result) {
+            setCityInput("");
+            setWeatherData(null);
+            setCityError(`Не удалось получить данные для города ${DEFAULT_CITY}`);
+            return;
+          }
+
+          setWeatherData(result.weather);
+          setCityInput(result.cityName);
+        } catch (defaultCityError) {
+          if (isAbortError(defaultCityError) || !isMounted) {
+            return;
+          }
+
+          console.error(defaultCityError);
+          setCityInput("");
+          setWeatherData(null);
+          setCityError(`Не удалось получить данные для города ${DEFAULT_CITY}`);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
-    loadDefaultWeather();
+    loadInitialWeather();
+
+    return () => {
+      isMounted = false;
+      abortActiveRequest();
+    };
   }, []);
 
   function handleChange(event) {
     setCityInput(event.target.value);
     setCityError("");
+  }
+
+  async function handleSubmit() {
+    const trimmedCity = cityInput.trim();
+
+    if (!trimmedCity) {
+      return;
+    }
+
+    if (failedCities.includes(trimmedCity.toLowerCase())) {
+      setCityError(`Не удалось получить данные для города ${trimmedCity}`);
+      return;
+    }
+
+    const controller = createController();
+
+    setIsLoading(true);
+    setCityError("");
+    setWeatherError("");
+
+    try {
+      const result = await loadWeatherForCity(trimmedCity, controller);
+
+      if (!result) {
+        setFailedCities((prev) => {
+          const normalizedCity = trimmedCity.toLowerCase();
+
+          if (prev.includes(normalizedCity)) {
+            return prev;
+          }
+
+          return [...prev, normalizedCity];
+        });
+
+        setCityInput("");
+        setCityError(`Не удалось получить данные для города ${trimmedCity}`);
+        return;
+      }
+
+      setWeatherData(result.weather);
+      setCityInput(result.cityName);
+      setWeatherError("");
+    } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
+
+      console.error(error);
+      setWeatherData(null);
+      setWeatherError("Не удалось получить данные");
+    } finally {
+      if (!controller.signal.aborted) {
+        setIsLoading(false);
+      }
+    }
+  }
+
+  function handleClose() {
+    abortActiveRequest();
+    setIsVisible(false);
   }
 
   if (!isVisible) {
@@ -63,7 +215,7 @@ function WeatherWidget() {
     <section className="weather-widget">
       <button
         className="weather-close-button"
-        onClick={() => setIsVisible(false)}
+        onClick={handleClose}
         type="button"
       >
         ×
@@ -97,7 +249,7 @@ function WeatherWidget() {
               placeholder="Введите город"
               disabled={isLoading}
             />
-            <button type="button" disabled={isLoading}>
+            <button onClick={handleSubmit} type="button" disabled={isLoading}>
               Получить погоду
             </button>
           </div>
